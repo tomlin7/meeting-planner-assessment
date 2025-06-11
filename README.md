@@ -1,5 +1,11 @@
 # Minimal Meeting Planner - Assessment
 
+### Deployments
+
+- Minimal: https://meeting-planner-assessment.streamlit.app
+- Production Ready: https://meeting-planner-assessment.vercel.app
+- Backend: https://meeting-planner-assessment.onrender.com
+
 ## 1. How exactly did you use AI while building this?
 
 - **Tools Used:**
