@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import {
   Card,
   CardContent,
@@ -29,13 +29,6 @@ import {
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { Search, Calendar, Clock, BookOpen } from "lucide-react";
-import {
-  Select,
-  SelectTrigger,
-  SelectContent,
-  SelectItem,
-  SelectValue,
-} from "@/components/ui/select";
 const API_URL = import.meta.env.VITE_API_URL;
 export function MeetingSuggestions() {
   const [duration, setDuration] = useState("30");
@@ -44,32 +37,11 @@ export function MeetingSuggestions() {
   const [bookingTitle, setBookingTitle] = useState("");
   const [selectedSlot, setSelectedSlot] = useState<string[] | null>(null);
   const [isBooking, setIsBooking] = useState(false);
-  const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
-  const [users, setUsers] = useState<any[]>([]);
-
-  useEffect(() => {
-    const fetchUsers = async () => {
-      try {
-        const response = await fetch(import.meta.env.VITE_API_URL + "/users");
-        if (response.ok) {
-          const data = await response.json();
-          setUsers(data);
-          if (data.length > 0) setSelectedUserId(Number(data[0].id));
-        }
-      } catch (e) {
-        // Optionally handle error
-      }
-    };
-    fetchUsers();
-  }, []);
 
   const findMeetings = async () => {
     setIsLoading(true);
     try {
       let url = `${API_URL}/suggest?duration=${duration}`;
-      if (selectedUserId !== null) {
-        url += `&user_id=${selectedUserId}`;
-      }
       const response = await fetch(url);
       if (!response.ok) {
         const error = await response.json();
@@ -104,7 +76,7 @@ export function MeetingSuggestions() {
   };
 
   const bookMeeting = async () => {
-    if (!selectedSlot || selectedUserId === null) return;
+    if (!selectedSlot) return;
     setIsBooking(true);
     try {
       const response = await fetch(`${API_URL}/book`, {
@@ -116,7 +88,6 @@ export function MeetingSuggestions() {
           startTime: selectedSlot[0],
           endTime: selectedSlot[1],
           title: bookingTitle || "Meeting",
-          user_id: selectedUserId,
         }),
       });
       if (!response.ok) {
@@ -174,30 +145,7 @@ export function MeetingSuggestions() {
                 step="15"
               />
             </div>
-            <div className="space-y-2 flex-1 max-w-xs">
-              <Label>Select User</Label>
-              <Select
-                value={
-                  selectedUserId !== null ? String(selectedUserId) : undefined
-                }
-                onValueChange={(val) => setSelectedUserId(Number(val))}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select user..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {users.map((user) => (
-                    <SelectItem key={user.id} value={String(user.id)}>
-                      User {user.id}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <Button
-              onClick={findMeetings}
-              disabled={isLoading || selectedUserId === null}
-            >
+            <Button onClick={findMeetings} disabled={isLoading}>
               {isLoading ? "Searching..." : "Find Available Slots"}
             </Button>
           </div>

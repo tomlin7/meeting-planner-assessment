@@ -45,7 +45,6 @@ class BookSlotPayload(BaseModel):
     startTime: str
     endTime: str
     title: str
-    user_id: int = None
 
 
 # =============================
@@ -115,8 +114,8 @@ def set_slots(payload: SlotsPayload):
 
 
 @app.get("/suggest")
-def suggest_slots(duration: int = Query(..., gt=0), user_id: int = Query(None)):
-    merged = get_busy_intervals([user_id] if user_id is not None else None)
+def suggest_slots(duration: int = Query(..., gt=0)):
+    merged = get_busy_intervals(None)
     work_start = datetime.combine(datetime.today(), WORKDAY_START)
     work_end = datetime.combine(datetime.today(), WORKDAY_END)
     free = get_free_intervals(merged, work_start, work_end)
@@ -161,7 +160,6 @@ def get_calendar(userId: int):
 def book_slot(payload: BookSlotPayload):
     start = payload.startTime
     end = payload.endTime
-    user_id = payload.user_id
     try:
         start_dt = datetime.strptime(start, TIME_FORMAT)
         end_dt = datetime.strptime(end, TIME_FORMAT)
@@ -181,7 +179,7 @@ def book_slot(payload: BookSlotPayload):
             content={"error": "Meeting must be within work hours (09:00-18:00)"},
         )
     duration = int((end_dt - start_dt).total_seconds() // 60)
-    merged = get_busy_intervals([user_id] if user_id is not None else None)
+    merged = get_busy_intervals(None)
     work_start = datetime.combine(datetime.today(), WORKDAY_START)
     work_end = datetime.combine(datetime.today(), WORKDAY_END)
     free = get_free_intervals(merged, work_start, work_end)
@@ -210,7 +208,6 @@ def book_slot(payload: BookSlotPayload):
         "endTime": end,
         "title": payload.title,
         "bookedAt": datetime.now().isoformat(),
-        "user_id": user_id,
     }
     booked_meetings.append(meeting)
     return {"message": "Meeting booked successfully", "meeting": meeting}

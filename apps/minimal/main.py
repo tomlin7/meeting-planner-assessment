@@ -51,15 +51,6 @@ duration = st.number_input(
     "Meeting duration (minutes)", min_value=1, max_value=480, value=30
 )
 
-if "available_users" in st.session_state:
-    st.subheader("Select Meeting Participant")
-    selected_user_id = st.selectbox(
-        "Choose participant",
-        options=[user["id"] for user in st.session_state["available_users"]],
-        index=0,
-    )
-    st.session_state["selected_user_id"] = selected_user_id
-
 if "suggested_slots" not in st.session_state:
     st.session_state["suggested_slots"] = []
 
@@ -67,11 +58,6 @@ if "suggested_slots" not in st.session_state:
 def fetch_suggestions():
     try:
         params = {"duration": duration}
-        if (
-            "available_users" in st.session_state
-            and "selected_user_id" in st.session_state
-        ):
-            params["user_id"] = st.session_state["selected_user_id"]
         resp = requests.get(f"{API_URL}/suggest", params=params)
         if resp.ok:
             slots = resp.json()
@@ -101,22 +87,17 @@ if slots:
             st.write(":alarm_clock: Ready for action!")
         with col3:
             if st.button("Book", key=f"book_{i}"):
-                if (
-                    "available_users" in st.session_state
-                    and "selected_user_id" in st.session_state
-                ):
-                    book_payload = {
-                        "startTime": slot[0],
-                        "endTime": slot[1],
-                        "title": "Meeting",
-                        "user_id": st.session_state["selected_user_id"],
-                    }
-                    book_resp = requests.post(f"{API_URL}/book", json=book_payload)
-                    if book_resp.ok:
-                        st.success(book_resp.json().get("message", "Slot booked!"))
-                        fetch_suggestions()
-                    else:
-                        st.error(f"Booking failed: {book_resp.text}")
+                book_payload = {
+                    "startTime": slot[0],
+                    "endTime": slot[1],
+                    "title": "Meeting",
+                }
+                book_resp = requests.post(f"{API_URL}/book", json=book_payload)
+                if book_resp.ok:
+                    st.success(book_resp.json().get("message", "Slot booked!"))
+                    fetch_suggestions()
+                else:
+                    st.error(f"Booking failed: {book_resp.text}")
 
 
 # =============================
@@ -138,7 +119,18 @@ def fetch_user_calendar(user_id):
 # =============================
 # UI: Timeline/Gantt Chart
 # =============================
-user_to_show = st.session_state.get("selected_user_id")
+# Add user picker for calendar if available_users exist
+user_to_show = None
+if "available_users" in st.session_state and st.session_state["available_users"]:
+    st.subheader("Select User for Calendar View")
+    user_to_show = st.selectbox(
+        "Choose user to view calendar",
+        options=[user["id"] for user in st.session_state["available_users"]],
+        index=0,
+        key="calendar_user_picker",
+    )
+else:
+    user_to_show = st.session_state.get("selected_user_id")
 
 user_calendar = None
 if user_to_show is not None:
